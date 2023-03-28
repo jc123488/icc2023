@@ -1,0 +1,10 @@
+read_file -format verilog {./filename.v}
+current_design top
+uplevel #0 source ../script/DC.sdc
+#compile -exact_map
+
+compile_ultra
+
+write -hierarchy -format verilog -output .filename_syn.v
+write -hierarchy -format ddc -output ..filename_syn.ddc
+write_sdf -version 2.1 -context verilog .filename_syn.sdf
