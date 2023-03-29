@@ -117,7 +117,7 @@ always @(posedge CLK or posedge RST) begin
         else if(is_right_up)begin
             right_up_cnt <= right_up_cnt + 6'd1;
         end
-        else begin
+        else if(is_right_down)begin
             right_down_cnt <= right_down_cnt + 6'd1;
         end
     end
@@ -169,7 +169,19 @@ always @(posedge CLK or posedge RST) begin
     end
 end
 
+always @(posedge CLK or posedge RST) begin
+    if(RST)begin
+        circle_x <= 4'd0;
+        circle_y <= 4'd0;
+    end
+    else if(state_cs == CNT2) begin
+        case (sec)
+            2'd0:
 
+            default: 
+        endcase
+    end
+end
 
 endmodule
 
