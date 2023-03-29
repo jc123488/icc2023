@@ -69,7 +69,7 @@ always @(*) begin
         CNT1:
             state_ns = (cnt_64 == 7'd63) ? CNT2 : CNT1;
         CNT2:
-            state_ns = (cnt_64 == 7'd35) ? OPT : CNT2;
+            state_ns = (cnt_64 == 7'd35) ? OPT1 : CNT2;
         OPT1:
             state_ns = (cnt_40 == 6'd39) ? OPT2 : OPT1;
         OPT2:
@@ -417,6 +417,14 @@ always @(posedge CLK or posedge RST) begin
             endcase
         end
     end
+    else if(state_cs == OPT1)begin
+        circle_x <= max_circle1_x[cnt_opt];
+        circle_y <= max_circle1_y[cnt_opt];
+    end 
+    else if(state_cs == OPT2)begin
+        circle_x <= max_circle2_x[cnt_opt];
+        circle_y <= max_circle2_y[cnt_opt];
+    end 
 end
 
 assign x_mis=(circle_x > X_in[cnt_40])? circle_x - X_in[cnt_40]: X_in[cnt_40]-circle_x;
