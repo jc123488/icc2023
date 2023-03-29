@@ -137,7 +137,7 @@ end
 
 always @(posedge CLK or posedge RST) begin
     if(RST)
-        DONE <= 1'd0;
+        DONE <= 1'd1;
     else if(state_cs == OUTPUT)
         DONE <= 1'd1;
     else 
