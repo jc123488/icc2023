@@ -39,6 +39,8 @@ reg [6:0] cnt_64;
 reg [2:0] max,sec,cnt_7;
 reg [5:0] max_v,sec_v;
 
+reg [3:0] circle_x, circle_y;
+
 always @(posedge CLK or posedge RST) begin
     if(RST)
         state_cs <= IDLE;
@@ -57,10 +59,7 @@ always @(*) begin
         CNT1:
             state_ns = (cnt_64 == 7'd63) ? CNT2 : CNT1;
         CNT2:
-        // CNT1:
-
-        // CNT2:
-
+            state_ns = (cnt_64 == 7'd49) ? OPT : CNT2;
         // OPT:
 
         // OUTPUT:
@@ -85,8 +84,10 @@ end
 always @(posedge CLK or posedge RST) begin
     if(RST)
         cnt_64 <=7'd0;
-    else if(state_cs == CNT1 && cnt_40==6'd39)
-        cnt_64 <=cnt_64+1;
+    else if(state_cs == CNT1 && cnt_40 == 6'd39)
+        cnt_64 <= cnt_64 + 1;
+    else if(state_cs == CNT2 && cnt_40 == 6'd39)
+        cnt_64 <= cnt_64 + 1;
 end
 
 
@@ -120,7 +121,7 @@ always @(posedge CLK or posedge RST) begin
         else if(is_right_up)begin
             right_up_cnt <= right_up_cnt + 6'd1;
         end
-        else begin
+        else if(is_right_down)begin
             right_down_cnt <= right_down_cnt + 6'd1;
         end
     end
@@ -220,31 +221,39 @@ always @(posedge CLK or posedge RST) begin
     if(RST)begin
         C1X <= 4'd0;
         C1Y <= 4'd0;
+        C2X <= 4'd0;
+        C2Y <= 4'd0;
     end
     else if(state_cs == CNT1)begin
-        if(cnt_64==7'd0)
-
+        // if(cnt_64==7'd0)
+        C1X <= circle_x;
+        C1Y <= circle_y;
     end
-    // else if()begin
-
-    // end
+    else if(state_cs == CNT2)begin
+        C2X <= circle_x;
+        C2Y <= circle_y;
+    end
     else begin
         C1X <= 4'd0;
         C1Y <= 4'd0;
+        C2X <= 4'd0;
+        C2Y <= 4'd0;
     end
 end
 
 always @(posedge CLK or posedge RST) begin
     if(RST)begin
-        C2X <= 4'd0;
-        C2Y <= 4'd0;
+        circle_x <= 4'd0;
+        circle_y <= 4'd0;
     end
-    else begin
-        C2X <= 4'd0;
-        C2Y <= 4'd0;
+    else if(state_cs == CNT2) begin
+        case (sec)
+            2'd0:
+
+            default: 
+        endcase
     end
 end
-
 
 endmodule
 
