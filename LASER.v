@@ -16,11 +16,12 @@ integer i;
 reg [39:0] in_C1, in_C2;
 reg [4:0] in_cnt1, in_cnt2;
 
+reg [5:0] dot_in;
+
 reg [5:0] left_down_cnt, left_up_cnt, right_down_cnt, right_up_cnt;
 
 wire is_left_down, is_left_up, is_right_down, is_right_up;
 wire x_mis,y_mis;
-
 
 assign is_left_up = (X < 4'd8 && Y < 4'd8) ? 1'd1 : 1'd0;
 assign is_left_down = (X < 4'd8 && Y > 4'd7) ? 1'd1 : 1'd0;
@@ -73,8 +74,8 @@ always @(*) begin
         OPT1:
             state_ns = (cnt_40 == 6'd39) ? OPT2 : OPT1;
         OPT2:
-            state_ns = (cnt_opt == 4'd10) ? OUTPUT : (cnt_40 == 6'd39) ? OPT1 : OPT2;
-         OUTPUT:
+            state_ns = (cnt_40 == 6'd39) ? (cnt_opt == 4'd9) ? OUTPUT : OPT1 : OPT2;
+        OUTPUT:
             state_ns = IDLE;
         default: 
             state_ns = IDLE;
@@ -280,7 +281,6 @@ always @(posedge CLK or posedge RST) begin
         C2Y <= 4'd0;
     end
     else if(state_cs == CNT1)begin
-        // if(cnt_64==7'd0)
         C1X <= circle_x;
         C1Y <= circle_y;
     end
@@ -288,7 +288,16 @@ always @(posedge CLK or posedge RST) begin
         C2X <= circle_x;
         C2Y <= circle_y;
     end
-    else begin
+    else if(state_cs == OPT1)begin
+
+        C1X <= circle_x;
+        C1Y <= circle_y;
+    end
+    else if(state_cs == OPT2)begin
+        C2X <= circle_x;
+        C2Y <= circle_y;
+    end
+    else if(state_cs == IDLE)begin
         C1X <= 4'd0;
         C1Y <= 4'd0;
         C2X <= 4'd0;
@@ -437,6 +446,13 @@ always @(posedge CLK or posedge RST) begin
         if(xs && ys)
     end
 end
+
+always @(posedge CLK or posedge RST) begin
+    if(RST)
+        dot_in <= 6'd0;
+    else if 
+end
+
 endmodule
 
 
