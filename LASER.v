@@ -44,8 +44,8 @@ reg [5:0] max_v,sec_v;
 
 reg [3:0] circle_x, circle_y;
 
-reg [3:0] max_circle1_x[0:20];
-reg [3:0] max_circle1_y[0:20];
+reg [3:0] max_circle1_x[0:18];
+reg [3:0] max_circle1_y[0:18];
 reg [3:0] max_circle2_x[0:9];
 reg [3:0] max_circle2_y[0:9];
 reg [4:0] cnt_max, cnt_opt;
@@ -210,7 +210,7 @@ always @(posedge CLK or posedge RST) begin
     else if(state_cs == COMP)begin
         case (cnt_7)
             3'd0: begin
-                if (right_up_cnt>left_up_cnt) 
+                if (right_up_cnt>=left_up_cnt) 
                     max<= 2'd1;
             end
             3'd1: begin
@@ -318,14 +318,29 @@ always @(posedge CLK) begin
 		for(j=0;j<10;j=j+1)begin
 			max_circle1_x[j] <= 0;
 			max_circle1_y[j] <= 0;
+			max_circle2_x[j] <= 0;
+			max_circle2_y[j] <= 0;
 		end
 		cnt_max <= 0;
 	end
 	else if(state_cs == CNT1)begin
-		if(in_cnt1 > 5'd10 && cnt_40 == 6'd39)begin
+		if(cnt_64 == 7'd63 && cnt_40 ==6'd39)begin
+			cnt_max <= 0;
+		end
+		else if(in_cnt1 >= 5'd11 && cnt_40 == 6'd39 && cnt_max < 20)begin
 			max_circle1_x[cnt_max] <= circle_x;
 			max_circle1_y[cnt_max] <= circle_y;
 			cnt_max <= cnt_max + 1;
+		end
+	end
+	else if(state_cs == CNT2)begin
+		if(in_cnt2 > 5'd5 && cnt_40 == 6'd39)begin
+			max_circle2_x[cnt_max] <= circle_x;
+			max_circle2_y[cnt_max] <= circle_y;
+			cnt_max <= cnt_max + 1;
+		end
+		else if(cnt_64 == 7'd35 && cnt_40 ==6'd39)begin
+			cnt_max <= 0;
 		end
 	end
  end
@@ -559,6 +574,12 @@ always @(posedge CLK or posedge RST) begin
     end
 end
 
+wire [3:0] X_in40,Y_in40;
+wire iv_C1_max;
+assign iv_C1_max = ~in_C1_max[cnt_40];
+assign X_in40 = X_in[cnt_40];
+assign Y_in40 = Y_in[cnt_40];
+
 always @(posedge CLK or posedge RST) begin
     if(RST)begin
         in_cnt2 <= 5'd0;
@@ -566,8 +587,8 @@ always @(posedge CLK or posedge RST) begin
         end
     else if(state_cs == CNT2 && ~in_C1_max[cnt_40])begin
         if(cnt_40==6'd39)begin
-        in_cnt2 <= 5'd0;
-        in_C2<=40'd0;
+			in_cnt2 <= 5'd0;
+			in_C2<=40'd0;
         end
         else if(mis_b==4 && mis_s==0)begin
             in_C2[cnt_40]<=1;
