@@ -31,12 +31,13 @@ parameter IDLE = 3'd0,
           COMP = 3'd2,
           CNT1 = 3'd3,
           CNT2 = 3'd4,
-          OPT = 3'd5,
-          OUTPUT = 3'd6;
+          OPT1 = 3'd5,
+          OPT2 = 3'd6,
+          OUTPUT = 3'd7;
 
 reg [5:0] cnt_40;
 reg [6:0] cnt_64;
-reg [2:0] max,sec,cnt_7,cnt_6;
+reg [2:0] max,sec,cnt_7;
 reg [5:0] max_v;
 
 reg [3:0] circle_x, circle_y;
@@ -45,8 +46,7 @@ reg [3:0] max_circle1_x[0:9];
 reg [3:0] max_circle1_y[0:9];
 reg [3:0] max_circle2_x[0:9];
 reg [3:0] max_circle2_y[0:9];
-reg [3:0] cnt_max;
-reg cd_line;
+reg [3:0] cnt_max, cnt_opt;
 
 always @(posedge CLK or posedge RST) begin
     if(RST)
@@ -66,11 +66,13 @@ always @(*) begin
         CNT1:
             state_ns = (cnt_64 == 7'd63) ? CNT2 : CNT1;
         CNT2:
-            state_ns = (cnt_64 == 7'd35) ? OPT : CNT2;
-        // OPT:
-
-        // OUTPUT:
-            // state_ns = IDLE;
+            state_ns = (cnt_64 == 7'd49) ? OPT : CNT2;
+        OPT1:
+            state_ns = (cnt_40 == 6'd39) ? OPT2 : OPT1;
+        OPT2:
+            state_ns = (cnt_opt == 4'd10) ? OUTPUT : (cnt_40 == 6'd39) ? OPT1 : OPT2;
+         OUTPUT:
+            state_ns = IDLE;
         default: 
             state_ns = IDLE;
     endcase
@@ -78,26 +80,36 @@ end
 
 always @(posedge CLK or posedge RST) begin
     if(RST)
-        cnt_40 <= 6'd0;
-    else if(state_cs == INPUT || state_cs == CNT1)
-        if(cnt_40==6'd39)
-            cnt_40<=6'd0;
-        else
-            cnt_40 <= cnt_40 + 6'd1;
-    else 
-        cnt_40 <= 6'd0;
+        cnt_opt <= 4'd0;
+    else if(state_cs == OPT2)
+        if(cnt_40 == 6'd39)
+            cnt_opt <= cnt_opt + 4'd1;
 end
 
 always @(posedge CLK or posedge RST) begin
     if(RST)
-        cnt_6 <= 3'd0;
-    else if(state_cs == CNT2)
-        if(cnt_6==3'd5)
-            cnt_6<=6'd0;
+        cnt_40 <= 6'd0;
+    else if(state_cs == INPUT || state_cs == CNT1 || state_cs == CNT2)
+        if(cnt_40==6'd39)
+            cnt_40<=6'd0;
         else
-            cnt_6 <= cnt_6 + 3'd1;
+            cnt_40 <= cnt_40 + 6'd1;
+    else if(state_cs == OPT1)
+        if(cnt_40==6'd39)
+            cnt_40<=6'd0;
+        else if(max_circle1_x[cnt_opt] == C1X && max_circle1_y[cnt_opt] == C1Y)
+            cnt_40 <= 6'd39;
+        else
+            cnt_40 <= cnt_40 + 6'd1;
+    else if(state_cs == OPT2)
+        if(cnt_40==6'd39)
+            cnt_40<=6'd0;
+        else if(max_circle2_x[cnt_opt] == C2X && max_circle2_y[cnt_opt] == C2Y)
+            cnt_40 <= 6'd39;
+        else
+            cnt_40 <= cnt_40 + 6'd1;
     else 
-        cnt_6 <= 3'd0;
+        cnt_40 <= 6'd0;
 end
 
 always @(posedge CLK or posedge RST) begin
@@ -107,15 +119,6 @@ always @(posedge CLK or posedge RST) begin
         cnt_64 <= cnt_64 + 1;
     else if(state_cs == CNT2 && cnt_40 == 6'd39)
         cnt_64 <= cnt_64 + 1;
-end
-
-always @(*) begin
-    if(state_cs == CNT1 && cnt_64[2:0]==3'd7)
-        cd_line=1;
-    else if(state_cs == CNT2 && cnt_6==3'd5)
-        cd_line=1;
-    else    
-        cd_line=0;
 end
 
 
@@ -275,7 +278,7 @@ always @(posedge CLK or posedge RST) begin
         circle_y <= 4'd0;
     end
     else if(state_cs == CNT1) begin
-        if(cnt_64==7'd0)   // start point
+        if(cnt_64==7'd0)   
             case (max)
                 2'd0:begin
                     circle_x <= 4'd0;
@@ -294,28 +297,8 @@ always @(posedge CLK or posedge RST) begin
                     circle_y <= 4'd15;
                 end
             endcase
-        else if(cd_line && cnt_40==6'd39)begin
+        else begin
             case (max)
-                2'd0:begin
-                    circle_x <= 4'd0;
-                    circle_y <= circle_y+1;
-                end
-                2'd1:begin
-                    circle_x <= 4'd15;
-                    circle_y <= circle_y+1;
-                end
-                2'd2:begin
-                    circle_x <= 4'd0;
-                    circle_y <= circle_y-1;
-                end
-                2'd3:begin
-                    circle_x <= 4'd15;
-                    circle_y <= circle_y-1;
-                end
-            endcase
-        end
-        else if(cnt_40==6'd39)begin
-            case (max)  //next point
                 2'd0:begin
                     circle_x <= circle_x+1;
                 end
@@ -332,62 +315,14 @@ always @(posedge CLK or posedge RST) begin
         end
     end
     else if(state_cs == CNT2) begin
-        if(cnt_64==7'd0 )begin
-            case (sec)
-                2'd0:begin
-                    circle_x <= 4'd2;
-                    circle_y <= 4'd2;
-                end
-                2'd1:begin
-                    circle_x <= 4'd13;
-                    circle_y <= 4'd2;
-                end
-                2'd2:begin
-                    circle_x <= 4'd2;
-                    circle_y <= 4'd13;
-                end
-                2'd3:begin
-                    circle_x <= 4'd13;
-                    circle_y <= 4'd13;
-                end
-            endcase
-        end
-        else if(cd_line && cnt_40==6'd39)begin
-            case (sec)
-                2'd0:begin
-                    circle_x <= 4'd2;
-                    circle_y <= circle_y+1;
-                end
-                2'd1:begin
-                    circle_x <= 4'd13;
-                    circle_y <= circle_y+1;
-                end
-                2'd2:begin
-                    circle_x <= 4'd2;
-                    circle_y <= circle_y-1;
-                end
-                2'd3:begin
-                    circle_x <= 4'd13;
-                    circle_y <= circle_y-1;
-                end
-            endcase
-        end
-        else if( cnt_40==6'd39)begin
-            case (sec)  //next point
-                2'd0:begin
-                    circle_x <= circle_x+1;
-                end
-                2'd1:begin
-                    circle_x <=circle_x-1;
-                end
-                2'd2:begin
-                    circle_x <= circle_x+1;
-                end
-                2'd3:begin
-                    circle_x <=circle_x-1;
-                end
-            endcase
-        end
+        case (sec)
+            2'd0:
+
+            default: 
+        endcase
+    end
+    else if(state_cs == OPT1)begin
+        if(cnt_40 == 6'd0)
     end
 end
 
