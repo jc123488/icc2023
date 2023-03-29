@@ -475,7 +475,9 @@ assign mis_s=(x_mis<y_mis)?y_mis:x_mis;
 
 //determine dot in the circle
 always @(posedge CLK or posedge RST) begin
-    if(state_cs == CNT1)begin
+    if(RST)
+        in_cnt1 <= 5'd0;
+    else if(state_cs == CNT1)begin
         if(mis_b==4 && mis_s==0)begin
             in_C1[cnt_40]<=1;
             in_cnt1<=in_cnt1+1;
@@ -496,7 +498,9 @@ always @(posedge CLK or posedge RST) begin
 end
 
 always @(posedge CLK or posedge RST) begin
-    if(state_cs == CNT2 && ~in_C1[cnt_40])begin
+    if(RST)
+        in_cnt2 <= 5'd0;
+    else if(state_cs == CNT2 && ~in_C1[cnt_40])begin
         if(mis_b==4 && mis_s==0)begin
             in_C2[cnt_40]<=1;
             in_cnt2<=in_cnt2+1;
