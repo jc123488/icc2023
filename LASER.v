@@ -47,7 +47,7 @@ always @(*) begin
         IDLE:
             state_ns = INPUT; 
         INPUT:
-            state_ns = (cnt_40 == 6'd39) ? CNT1 : INPUT;
+                  state_ns = (cnt_40 == 6'd39) ? CNT1 : INPUT;;
         // CNT1:
 
         // CNT2:
