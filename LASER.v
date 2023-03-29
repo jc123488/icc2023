@@ -47,15 +47,15 @@ always @(*) begin
         IDLE:
             state_ns = INPUT; 
         INPUT:
-            state_ns = (cnt_40 == 6'd39) ? INPUT : CNT;
-        CNT1:
+            state_ns = (cnt_40 == 6'd39) ? INPUT : CNT1;
+        // CNT1:
 
-        CNT2:
+        // CNT2:
 
-        OPT:
+        // OPT:
 
-        OUTPUT:
-            state_ns = IDLE;
+        // OUTPUT:
+            // state_ns = IDLE;
         default: 
             state_ns = IDLE;
     endcase
@@ -128,6 +128,9 @@ always @(posedge CLK or posedge RST) begin
         C2X <= 4'd0;
         C2Y <= 4'd0;
     end
+    // else if()begin
+
+    // end
     else begin
         C1X <= 4'd0;
         C1Y <= 4'd0;
