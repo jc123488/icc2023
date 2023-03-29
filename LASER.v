@@ -18,7 +18,7 @@ reg [4:0] in_cnt1, in_cnt2,in_cnt1_max, in_cnt2_max;
 
 reg [5:0] left_down_cnt, left_up_cnt, right_down_cnt, right_up_cnt;
 
-wire is_left_down, is_left_up, is_right_down, is_right_up;
+wire is_left_down, is_left_up, is_right_down, is_right_up,already_in_C1;
 wire [3:0]x_mis,y_mis,mis_b,mis_s;
 
 
@@ -40,16 +40,17 @@ parameter IDLE = 3'd0,
 reg [5:0] cnt_40;
 reg [6:0] cnt_64;
 reg [2:0] max,sec,cnt_7,cnt_6;
-reg [5:0] max_v;
+reg [5:0] max_v,sec_v;
 
 reg [3:0] circle_x, circle_y;
 
-reg [3:0] max_circle1_x[0:9];
-reg [3:0] max_circle1_y[0:9];
+reg [3:0] max_circle1_x[0:20];
+reg [3:0] max_circle1_y[0:20];
 reg [3:0] max_circle2_x[0:9];
 reg [3:0] max_circle2_y[0:9];
-reg [3:0] cnt_max, cnt_opt;
+reg [4:0] cnt_max, cnt_opt;
 reg cd_line;
+assign already_in_C1=in_C1_max[cnt_40];//cnt_40
 
 always @(posedge CLK or posedge RST) begin
     if(RST)
@@ -67,9 +68,9 @@ always @(*) begin
         COMP:
             state_ns = (cnt_7 == 3'd2) ? CNT1 : COMP;
         CNT1:
-            state_ns = (cnt_64 == 7'd63) ? CNT2 : CNT1;
+            state_ns = (cnt_64 == 7'd63 && cnt_40 ==6'd39) ? CNT2 : CNT1;
         CNT2:
-            state_ns = (cnt_64 == 7'd35) ? OPT1 : CNT2;
+            state_ns = (cnt_64 == 7'd35 && cnt_40 ==6'd39) ? OPT1 : CNT2;
         OPT1:
             state_ns = (cnt_40 == 6'd39) ? OPT2 : OPT1;
         OPT2:
@@ -118,11 +119,12 @@ end
 always @(posedge CLK or posedge RST) begin
     if(RST)
         cnt_6 <= 3'd0;
-    else if(state_cs == CNT2)
-        if(cnt_6==3'd5)
+    else if(state_cs == CNT2)begin
+        if(cnt_6==3'd5 && cnt_40 == 6'd39)
             cnt_6<=6'd0;
-        else
+        else if(cnt_40 == 6'd39)
             cnt_6 <= cnt_6 + 3'd1;
+    end
     else 
         cnt_6 <= 3'd0;
 end
@@ -130,8 +132,12 @@ end
 always @(posedge CLK or posedge RST) begin
     if(RST)
         cnt_64 <=7'd0;
-    else if(state_cs == CNT1 && cnt_40 == 6'd39)
-        cnt_64 <= cnt_64 + 1;
+    else if(state_cs == CNT1 && cnt_40 == 6'd39)begin
+        if(cnt_64==6'd63)
+            cnt_64 <=7'd0;
+        else
+            cnt_64 <= cnt_64 + 1;
+    end
     else if(state_cs == CNT2 && cnt_40 == 6'd39)
         cnt_64 <= cnt_64 + 1;
 end
@@ -232,10 +238,14 @@ always @(posedge CLK or posedge RST) begin
             3'd1: begin
                 if(left_down_cnt>max_v) 
                     sec<= max;
+                else if(left_down_cnt>sec_v)
+                    sec<= 2'd2;
             end
             3'd2: begin
                 if(right_down_cnt>max_v)
                     sec<= max;
+                else if(right_down_cnt>sec_v)
+                    sec<= 2'd3;
         end
         endcase
     end
@@ -250,6 +260,8 @@ always @(posedge CLK or posedge RST) begin
             3'd0: begin
                 if (right_up_cnt>left_up_cnt) 
                     max_v<= right_up_cnt;
+                else
+                     max_v<= left_up_cnt;
             end
             3'd1: begin
                 if(left_down_cnt>max_v)
@@ -265,18 +277,58 @@ end
 
 always @(posedge CLK or posedge RST) begin
     if(RST)
+        sec_v<= 6'd0;
+    else if(state_cs == COMP)begin
+        case (cnt_7)
+            3'd0: begin
+                if (right_up_cnt<left_up_cnt) 
+                    sec_v<= right_up_cnt;
+                else
+                    sec_v<= left_up_cnt;
+            end
+            3'd1: begin
+                if(left_down_cnt>max_v)
+                    sec_v<= max_v;
+                else if(left_down_cnt>sec_v)
+                    sec_v<=left_down_cnt;
+            end
+            3'd2: begin
+                if(right_down_cnt>max_v)
+                    sec_v<= max_v;
+                else if(right_down_cnt>sec_v)  
+                    max_v<= right_down_cnt;
+            end
+        endcase
+    end
+end
+
+always @(posedge CLK or posedge RST) begin
+    if(RST)
         DONE <= 1'd1;
     else if(state_cs == OUTPUT)
         DONE <= 1'd1;
     else 
         DONE <= 1'd0;
 end
+
 //max_circle1_x
-// always @(posedge CLK or posedge RST) begin
-//      if(RST)
-//         in_C1<=40'd0;
-//     else if(state_cs == CNT1
-// end
+integer j;
+always @(posedge CLK) begin
+    if(RST)begin
+		for(j=0;j<10;j=j+1)begin
+			max_circle1_x[j] <= 0;
+			max_circle1_y[j] <= 0;
+		end
+		cnt_max <= 0;
+	end
+	else if(state_cs == CNT1)begin
+		if(in_cnt1 > 5'd10 && cnt_40 == 6'd39)begin
+			max_circle1_x[cnt_max] <= circle_x;
+			max_circle1_y[cnt_max] <= circle_y;
+			cnt_max <= cnt_max + 1;
+		end
+	end
+ end
 
 //in_C1_max
 always @(posedge CLK or posedge RST) begin
@@ -321,7 +373,7 @@ always @(posedge CLK or posedge RST) begin
             C2Y <= circle_y;
         end
     end
-    else if(state_cs == OPT1)begin
+    /*else if(state_cs == OPT1)begin
         C1X <= circle_x;
         C1Y <= circle_y;
     end
@@ -329,12 +381,12 @@ always @(posedge CLK or posedge RST) begin
         C2X <= circle_x;
         C2Y <= circle_y;
     end
-    else begin
+    else if(state_cs == OUTPUT)begin
         C1X <= 4'd0;
         C1Y <= 4'd0;
         C2X <= 4'd0;
         C2Y <= 4'd0;
-    end
+    end*/
 end
 
 //circle_x circle_y
@@ -344,7 +396,7 @@ always @(posedge CLK or posedge RST) begin
         circle_y <= 4'd0;
     end
     else if(state_cs == CNT1) begin
-        if(cnt_64==7'd0)   // start point
+        if(cnt_64==7'd0 && cnt_40==6'd0)   // start point
             case (max)
                 2'd0:begin
                     circle_x <= 4'd0;
@@ -401,7 +453,7 @@ always @(posedge CLK or posedge RST) begin
         end
     end
     else if(state_cs == CNT2) begin
-        if(cnt_64==7'd0 )begin
+        if(cnt_64==7'd0 && cnt_40==6'd0)begin
             case (sec)
                 2'd0:begin
                     circle_x <= 4'd2;
@@ -471,14 +523,20 @@ end
 assign x_mis=(circle_x > X_in[cnt_40])? circle_x - X_in[cnt_40]: X_in[cnt_40]-circle_x;
 assign y_mis=(circle_y > Y_in[cnt_40])? circle_y - Y_in[cnt_40]: Y_in[cnt_40]-circle_y;
 assign mis_b=(x_mis>y_mis)?x_mis:y_mis;
-assign mis_s=(x_mis<y_mis)?y_mis:x_mis;
+assign mis_s=(x_mis>y_mis)?y_mis:x_mis;
 
 //determine dot in the circle
 always @(posedge CLK or posedge RST) begin
-    if(RST)
+    if(RST)begin
         in_cnt1 <= 5'd0;
+        in_C1<=40'd0;
+    end
     else if(state_cs == CNT1)begin
-        if(mis_b==4 && mis_s==0)begin
+        if(cnt_40==6'd39)begin
+        in_cnt1 <= 5'd0;
+        in_C1<=40'd0;
+        end
+        else if(mis_b==4 && mis_s==0)begin
             in_C1[cnt_40]<=1;
             in_cnt1<=in_cnt1+1;
         end
@@ -486,22 +544,32 @@ always @(posedge CLK or posedge RST) begin
             in_C1[cnt_40]<=1;
             in_cnt1<=in_cnt1+1;
         end
-        else if(mis_b==2 && mis_s<4)begin
+        else if(mis_b<3)begin
             in_C1[cnt_40]<=1;
             in_cnt1<=in_cnt1+1;
         end
-        else if(mis_b==1 && mis_s<4)begin
-            in_C1[cnt_40]<=1;
-            in_cnt1<=in_cnt1+1;
-        end
+        // else if(mis_b==1 && mis_s<4)begin
+        //     in_C1[cnt_40]<=1;
+        //     in_cnt1<=in_cnt1+1;
+        // end
+        // else if(mis_b==0)begin
+        //     in_C1[cnt_40]<=1;
+        //     in_cnt1<=in_cnt1+1;
+        // end
     end
 end
 
 always @(posedge CLK or posedge RST) begin
-    if(RST)
+    if(RST)begin
         in_cnt2 <= 5'd0;
-    else if(state_cs == CNT2 && ~in_C1[cnt_40])begin
-        if(mis_b==4 && mis_s==0)begin
+        in_C2<=40'd0;
+        end
+    else if(state_cs == CNT2 && ~in_C1_max[cnt_40])begin
+        if(cnt_40==6'd39)begin
+        in_cnt2 <= 5'd0;
+        in_C2<=40'd0;
+        end
+        else if(mis_b==4 && mis_s==0)begin
             in_C2[cnt_40]<=1;
             in_cnt2<=in_cnt2+1;
         end
@@ -509,14 +577,14 @@ always @(posedge CLK or posedge RST) begin
             in_C2[cnt_40]<=1;
             in_cnt2<=in_cnt2+1;
         end
-        else if(mis_b==2 && mis_s<4)begin
+        else if(mis_b<3 )begin
             in_C2[cnt_40]<=1;
             in_cnt2<=in_cnt2+1;
-        end
-        else if(mis_b==1 && mis_s<4)begin
-            in_C2[cnt_40]<=1;
-            in_cnt2<=in_cnt2+1;
-        end
+         end
+        // else if(mis_b==1 && mis_s<4)begin
+        //     in_C2[cnt_40]<=1;
+        //     in_cnt2<=in_cnt2+1;
+        // end
     end
 end
 
@@ -527,5 +595,3 @@ end
 // end
 
 endmodule
-
-
