@@ -34,6 +34,7 @@ parameter IDLE = 3'd0,
           OUTPUT = 3'd5;
 
 reg [5:0] cnt_40;
+reg [6:0] cnt_64;
 
 always @(posedge CLK or posedge RST) begin
     if(RST)
@@ -47,9 +48,9 @@ always @(*) begin
         IDLE:
             state_ns = INPUT; 
         INPUT:
-            state_ns = (cnt_40 == 6'd39) ? INPUT : CNT;
+            state_ns = (cnt_40 == 6'd39) ? INPUT : CNT1;
         CNT1:
-
+            state_ns = (cnt_64 == 7'd63) ? CNT2 : CNT1;
         CNT2:
 
         OPT:
@@ -64,11 +65,22 @@ end
 always @(posedge CLK or posedge RST) begin
     if(RST)
         cnt_40 <= 6'd0;
-    else if(state_cs == INPUT)
-        cnt_40 <= cnt_40 + 6'd1;
+    else if(state_cs == INPUT || state_cs == CNT1)
+        if(cnt_40==6'd39)
+            cnt_40<=6'd0;
+        else
+            cnt_40 <= cnt_40 + 6'd1;
     else 
         cnt_40 <= 6'd0;
 end
+
+always @(posedge CLK or posedge RST) begin
+    if(RST)
+        cnt_64 <=7'd0;
+    else if(state_cs == CNT1 && cnt_40==6'd39)
+        cnt_64 <=cnt_64+1;
+end
+
 
 always @(posedge CLK) begin
     if(state_cs == IDLE || state_cs == OUTPUT)begin
@@ -125,16 +137,28 @@ always @(posedge CLK or posedge RST) begin
     if(RST)begin
         C1X <= 4'd0;
         C1Y <= 4'd0;
-        C2X <= 4'd0;
-        C2Y <= 4'd0;
+    end
+    else if(state_cs == CNT1)begin
+        if(cnt_64==7'd0)
+
     end
     else begin
         C1X <= 4'd0;
         C1Y <= 4'd0;
+    end
+end
+
+always @(posedge CLK or posedge RST) begin
+    if(RST)begin
+        C2X <= 4'd0;
+        C2Y <= 4'd0;
+    end
+    else begin
         C2X <= 4'd0;
         C2Y <= 4'd0;
     end
 end
+
 
 endmodule
 
