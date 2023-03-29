@@ -37,9 +37,15 @@ parameter IDLE = 3'd0,
 reg [5:0] cnt_40;
 reg [6:0] cnt_64;
 reg [2:0] max,sec,cnt_7;
-reg [5:0] max_v,sec_v;
+reg [5:0] max_v;
 
 reg [3:0] circle_x, circle_y;
+
+reg [3:0] max_circle1_x[0:9];
+reg [3:0] max_circle1_y[0:9];
+reg [3:0] max_circle2_x[0:9];
+reg [3:0] max_circle2_y[0:9];
+reg [3:0] cnt_max;
 
 always @(posedge CLK or posedge RST) begin
     if(RST)
@@ -245,6 +251,43 @@ always @(posedge CLK or posedge RST) begin
     if(RST)begin
         circle_x <= 4'd0;
         circle_y <= 4'd0;
+    end
+    else if(state_cs == CNT1) begin
+        if(cnt_64==7'd0)   
+            case (max)
+                2'd0:begin
+                    circle_x <= 4'd0;
+                    circle_y <= 4'd0;
+                end
+                2'd1:begin
+                    circle_x <= 4'd15;
+                    circle_y <= 4'd0;
+                end
+                2'd2:begin
+                    circle_x <= 4'd0;
+                    circle_y <= 4'd15;
+                end
+                2'd3:begin
+                    circle_x <= 4'd15;
+                    circle_y <= 4'd15;
+                end
+            endcase
+        else begin
+            case (max)
+                2'd0:begin
+                    circle_x <= circle_x+1;
+                end
+                2'd1:begin
+                    circle_x <=circle_x-1;
+                end
+                2'd2:begin
+                    circle_x <= circle_x+1;
+                end
+                2'd3:begin
+                    circle_x <=circle_x-1;
+                end
+            endcase
+        end
     end
     else if(state_cs == CNT2) begin
         case (sec)
