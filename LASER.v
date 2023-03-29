@@ -28,14 +28,16 @@ assign is_right_down = (X > 4'd7 && Y > 4'd7) ? 1'd1 : 1'd0;
 reg [2:0] state_cs, state_ns;
 parameter IDLE = 3'd0, 
           INPUT = 3'd1,
-          CNT1 = 3'd2,
-          CNT2 = 3'd3,
-          OPT = 3'd4,
-          OUTPUT = 3'd5;
+          COMP = 3'd2,
+          CNT1 = 3'd3,
+          CNT2 = 3'd4,
+          OPT = 3'd5,
+          OUTPUT = 3'd6;
 
 reg [5:0] cnt_40;
 reg [6:0] cnt_64;
-reg [2:0] max,sec;
+reg [2:0] max,sec,cnt_7;
+reg [5:0] max_v,sec_v;
 
 always @(posedge CLK or posedge RST) begin
     if(RST)
@@ -49,7 +51,9 @@ always @(*) begin
         IDLE:
             state_ns = INPUT; 
         INPUT:
-            state_ns = (cnt_40 == 6'd39) ? INPUT : CNT1;
+            state_ns = (cnt_40 == 6'd39) ? COMP : INPUT;
+        COMP:
+            state_ns = (cnt_7 == 3'd2) ? CNT1 : COMP;
         CNT1:
             state_ns = (cnt_64 == 7'd63) ? CNT2 : CNT1;
         CNT2:
@@ -128,11 +132,79 @@ always @(posedge CLK or posedge RST) begin
     end
 end
 
-//max,sec
 always @(posedge CLK or posedge RST) begin
     if(RST)
+        cnt_7<= 3'd0;
+    else if(state_cs == COMP)begin
+        cnt_7<=cnt_7+1;
+    end
+end
+
+//max,sec
+always @(posedge CLK or posedge RST) begin
+    if(RST)begin
         max<= 2'd0;
-    else if()
+    end
+    else if(state_cs == COMP)begin
+        case (cnt_7)
+            3'd0: begin
+                if (right_up_cnt>left_up_cnt) 
+                    max<= 2'd1;
+            end
+            3'd1: begin
+                if(left_down_cnt>max_v) 
+                    max<= 2'd2;
+            end
+            3'd2: begin
+                if(right_down_cnt>max_v)
+                    max<= 2'd3;
+        end
+        endcase
+    end
+end
+
+always @(posedge CLK or posedge RST) begin
+    if(RST)begin
+        sec<= 2'd1;
+    end
+    else if(state_cs == COMP)begin
+        case (cnt_7)
+            3'd0: begin
+                if (right_up_cnt>left_up_cnt) 
+                    sec<= 2'd0;
+            end
+            3'd1: begin
+                if(left_down_cnt>max_v) 
+                    sec<= max;
+            end
+            3'd2: begin
+                if(right_down_cnt>max_v)
+                    sec<= max;
+        end
+        endcase
+    end
+end
+
+
+always @(posedge CLK or posedge RST) begin
+    if(RST)
+        max_v<= 6'd0;
+    else if(state_cs == COMP)begin
+        case (cnt_7)
+            3'd0: begin
+                if (right_up_cnt>left_up_cnt) 
+                    max_v<= right_up_cnt;
+            end
+            3'd1: begin
+                if(left_down_cnt>max_v)
+                    max_v<= left_down_cnt;
+            end
+            3'd2: begin
+                if(right_down_cnt>max_v)
+                    max_v<= right_down_cnt;
+            end
+        endcase
+    end
 end
 
 always @(posedge CLK or posedge RST) begin
