@@ -19,6 +19,8 @@ reg [4:0] in_cnt1, in_cnt2;
 reg [5:0] left_down_cnt, left_up_cnt, right_down_cnt, right_up_cnt;
 
 wire is_left_down, is_left_up, is_right_down, is_right_up;
+wire xb_yb,xb_ys,xs_yb,xs_ys;
+
 
 assign is_left_up = (X < 4'd8 && Y < 4'd8) ? 1'd1 : 1'd0;
 assign is_left_down = (X < 4'd8 && Y > 4'd7) ? 1'd1 : 1'd0;
@@ -37,7 +39,7 @@ parameter IDLE = 3'd0,
 
 reg [5:0] cnt_40;
 reg [6:0] cnt_64;
-reg [2:0] max,sec,cnt_7;
+reg [2:0] max,sec,cnt_7,cnt_6;
 reg [5:0] max_v;
 
 reg [3:0] circle_x, circle_y;
@@ -47,6 +49,7 @@ reg [3:0] max_circle1_y[0:9];
 reg [3:0] max_circle2_x[0:9];
 reg [3:0] max_circle2_y[0:9];
 reg [3:0] cnt_max, cnt_opt;
+reg cd_line;
 
 always @(posedge CLK or posedge RST) begin
     if(RST)
@@ -66,7 +69,7 @@ always @(*) begin
         CNT1:
             state_ns = (cnt_64 == 7'd63) ? CNT2 : CNT1;
         CNT2:
-            state_ns = (cnt_64 == 7'd49) ? OPT : CNT2;
+            state_ns = (cnt_64 == 7'd35) ? OPT : CNT2;
         OPT1:
             state_ns = (cnt_40 == 6'd39) ? OPT2 : OPT1;
         OPT2:
@@ -114,11 +117,32 @@ end
 
 always @(posedge CLK or posedge RST) begin
     if(RST)
+        cnt_6 <= 3'd0;
+    else if(state_cs == CNT2)
+        if(cnt_6==3'd5)
+            cnt_6<=6'd0;
+        else
+            cnt_6 <= cnt_6 + 3'd1;
+    else 
+        cnt_6 <= 3'd0;
+end
+
+always @(posedge CLK or posedge RST) begin
+    if(RST)
         cnt_64 <=7'd0;
     else if(state_cs == CNT1 && cnt_40 == 6'd39)
         cnt_64 <= cnt_64 + 1;
     else if(state_cs == CNT2 && cnt_40 == 6'd39)
         cnt_64 <= cnt_64 + 1;
+end
+
+always @(*) begin
+    if(state_cs == CNT1 && cnt_64[2:0]==3'd7)
+        cd_line=1;
+    else if(state_cs == CNT2 && cnt_6==3'd5)
+        cd_line=1;
+    else    
+        cd_line=0;
 end
 
 
@@ -272,13 +296,14 @@ always @(posedge CLK or posedge RST) begin
     end
 end
 
+//circle_x circle_y
 always @(posedge CLK or posedge RST) begin
     if(RST)begin
         circle_x <= 4'd0;
         circle_y <= 4'd0;
     end
     else if(state_cs == CNT1) begin
-        if(cnt_64==7'd0)   
+        if(cnt_64==7'd0)   // start point
             case (max)
                 2'd0:begin
                     circle_x <= 4'd0;
@@ -297,8 +322,28 @@ always @(posedge CLK or posedge RST) begin
                     circle_y <= 4'd15;
                 end
             endcase
-        else begin
+        else if(cd_line && cnt_40==6'd39)begin
             case (max)
+                2'd0:begin
+                    circle_x <= 4'd0;
+                    circle_y <= circle_y+1;
+                end
+                2'd1:begin
+                    circle_x <= 4'd15;
+                    circle_y <= circle_y+1;
+                end
+                2'd2:begin
+                    circle_x <= 4'd0;
+                    circle_y <= circle_y-1;
+                end
+                2'd3:begin
+                    circle_x <= 4'd15;
+                    circle_y <= circle_y-1;
+                end
+            endcase
+        end
+        else if(cnt_40==6'd39)begin
+            case (max)  //next point
                 2'd0:begin
                     circle_x <= circle_x+1;
                 end
@@ -315,17 +360,73 @@ always @(posedge CLK or posedge RST) begin
         end
     end
     else if(state_cs == CNT2) begin
-        case (sec)
-            2'd0:
-
-            default: 
-        endcase
-    end
-    else if(state_cs == OPT1)begin
-        if(cnt_40 == 6'd0)
+        if(cnt_64==7'd0 )begin
+            case (sec)
+                2'd0:begin
+                    circle_x <= 4'd2;
+                    circle_y <= 4'd2;
+                end
+                2'd1:begin
+                    circle_x <= 4'd13;
+                    circle_y <= 4'd2;
+                end
+                2'd2:begin
+                    circle_x <= 4'd2;
+                    circle_y <= 4'd13;
+                end
+                2'd3:begin
+                    circle_x <= 4'd13;
+                    circle_y <= 4'd13;
+                end
+            endcase
+        end
+        else if(cd_line && cnt_40==6'd39)begin
+            case (sec)
+                2'd0:begin
+                    circle_x <= 4'd2;
+                    circle_y <= circle_y+1;
+                end
+                2'd1:begin
+                    circle_x <= 4'd13;
+                    circle_y <= circle_y+1;
+                end
+                2'd2:begin
+                    circle_x <= 4'd2;
+                    circle_y <= circle_y-1;
+                end
+                2'd3:begin
+                    circle_x <= 4'd13;
+                    circle_y <= circle_y-1;
+                end
+            endcase
+        end
+        else if( cnt_40==6'd39)begin
+            case (sec)  //next point
+                2'd0:begin
+                    circle_x <= circle_x+1;
+                end
+                2'd1:begin
+                    circle_x <=circle_x-1;
+                end
+                2'd2:begin
+                    circle_x <= circle_x+1;
+                end
+                2'd3:begin
+                    circle_x <=circle_x-1;
+                end
+            endcase
+        end
     end
 end
 
+assign 
+
+//determine dot in the circle
+always @(posedge CLK or posedge RST) begin
+    if(state_cs == CNT1)begin
+        if(circle_x>)
+    end
+end
 endmodule
 
 
