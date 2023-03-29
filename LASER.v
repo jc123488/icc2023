@@ -81,14 +81,6 @@ end
 
 always @(posedge CLK or posedge RST) begin
     if(RST)
-        cnt_opt <= 4'd0;
-    else if(state_cs == OPT2)
-        if(cnt_40 == 6'd39)
-            cnt_opt <= cnt_opt + 4'd1;
-end
-
-always @(posedge CLK or posedge RST) begin
-    if(RST)
         cnt_40 <= 6'd0;
     else if(state_cs == INPUT || state_cs == CNT1 || state_cs == CNT2)
         if(cnt_40==6'd39)
@@ -123,6 +115,8 @@ always @(posedge CLK or posedge RST) begin
     end
     else if(state_cs == CNT2 && cnt_40 == 6'd39 && cnt_24 == 23)
         cnt_64 <= cnt_64 + 1;
+	else if(state_cs == OUTPUT)
+		cnt_64 <=7'd0;
 end
 
 always @(*) begin
@@ -183,6 +177,8 @@ always @(posedge CLK or posedge RST) begin
     else if(state_cs == COMP)begin
         cnt_7<=cnt_7+1;
     end
+	else if(state_cs == OUTPUT)
+		cnt_7<= 3'd0;
 end
 
 //max,sec
@@ -206,6 +202,8 @@ always @(posedge CLK or posedge RST) begin
         end
         endcase
     end
+	else if(state_cs == OUTPUT)
+		max<= 2'd0;
 end
 
 always @(posedge CLK or posedge RST) begin
@@ -232,6 +230,8 @@ always @(posedge CLK or posedge RST) begin
         end
         endcase
     end
+	else if(state_cs == OUTPUT)
+		sec<= 2'd1;
 end
 
 
@@ -256,6 +256,8 @@ always @(posedge CLK or posedge RST) begin
             end
         endcase
     end
+	else if(state_cs == OUTPUT)
+		max_v<= 6'd0;
 end
 
 always @(posedge CLK or posedge RST) begin
@@ -279,10 +281,12 @@ always @(posedge CLK or posedge RST) begin
                 if(right_down_cnt>max_v)
                     sec_v<= max_v;
                 else if(right_down_cnt>sec_v)  
-                    max_v<= right_down_cnt;
+                    sec_v<= right_down_cnt;
             end
         endcase
     end
+	else if(state_cs == OUTPUT)
+		sec_v<= 6'd0;
 end
 
 always @(posedge CLK or posedge RST) begin
@@ -324,6 +328,15 @@ always @(posedge CLK) begin
 			in_C1_r[cnt_max] <= in_C1;
 		end
 	end
+	else if(state_cs == OUTPUT)begin
+		for(j=0;j<20;j=j+1)begin
+			max_circle1_x[j] <= 0;
+			max_circle1_y[j] <= 0;
+			in_cnt1_r[j] <= 0;
+			in_C1_r[j] <= 0;
+		end
+		cnt_max <= 0;
+	end
  end
 
 //in_C1_max
@@ -336,6 +349,10 @@ always @(posedge CLK or posedge RST) begin
         in_C1_max<=in_C1;
         in_cnt1_max<=in_cnt1;
     end
+	else if(state_cs == OUTPUT)begin
+		in_C1_max<=40'd0;
+        in_cnt1_max<=5'd0;
+    end
 end
 
 //in_C2_max
@@ -347,6 +364,10 @@ always @(posedge CLK or posedge RST) begin
     else if(state_cs == CNT2 && cnt_40==6'd39 && in_cnt2_max<max_value)begin
         in_C2_max<=in_C2;
         in_cnt2_max<=max_value;
+    end
+	else if(state_cs == OUTPUT)begin
+		in_C2_max<=40'd0;
+        in_cnt2_max<=5'd0;
     end
 end
 
