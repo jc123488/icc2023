@@ -13,6 +13,9 @@ reg [3:0] X_in [0:39];
 reg [3:0] Y_in [0:39];
 integer i;
 
+reg [39:0] in_C1, in_C2;
+reg [4:0] in_cnt1, in_cnt2;
+
 reg [5:0] left_down_cnt, left_up_cnt, right_down_cnt, right_up_cnt;
 
 wire is_left_down, is_left_up, is_right_down, is_right_up;
@@ -22,11 +25,13 @@ assign is_left_down = (X < 4'd8 && Y > 4'd7) ? 1'd1 : 1'd0;
 assign is_right_up = (X > 4'd7 && Y < 4'd8) ? 1'd1 : 1'd0;
 assign is_right_down = (X > 4'd7 && Y > 4'd7) ? 1'd1 : 1'd0;
 
-reg [1:0] state_cs, state_ns;
-parameter IDLE = 2'd0, 
-          INPUT = 2'd1,
-          CNT = 2'd2,
-          OUTPUT = 2'd3;
+reg [2:0] state_cs, state_ns;
+parameter IDLE = 3'd0, 
+          INPUT = 3'd1,
+          CNT1 = 3'd2,
+          CNT2 = 3'd3,
+          OPT = 3'd4,
+          OUTPUT = 3'd5;
 
 reg [5:0] cnt_40;
 
@@ -43,6 +48,14 @@ always @(*) begin
             state_ns = INPUT; 
         INPUT:
             state_ns = (cnt_40 == 6'd39) ? INPUT : CNT;
+        CNT1:
+
+        CNT2:
+
+        OPT:
+
+        OUTPUT:
+            state_ns = IDLE;
         default: 
             state_ns = IDLE;
     endcase
@@ -91,6 +104,12 @@ always @(posedge CLK or posedge RST) begin
             right_down_cnt <= right_down_cnt + 6'd1;
         end
     end
+    else if(state_cs == OUTPUT)begin
+        left_down_cnt <= 6'd0;
+        left_up_cnt <= 6'd0;
+        right_down_cnt <= 6'd0;
+        right_up_cnt <= 6'd0;
+    end
 end
 
 always @(posedge CLK or posedge RST) begin
@@ -108,9 +127,6 @@ always @(posedge CLK or posedge RST) begin
         C1Y <= 4'd0;
         C2X <= 4'd0;
         C2Y <= 4'd0;
-    end
-    else if(state_cs == OUTPUT)begin
-
     end
     else begin
         C1X <= 4'd0;
