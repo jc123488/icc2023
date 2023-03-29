@@ -35,6 +35,7 @@ parameter IDLE = 3'd0,
 
 reg [5:0] cnt_40;
 reg [6:0] cnt_64;
+reg [2:0] max,sec;
 
 always @(posedge CLK or posedge RST) begin
     if(RST)
@@ -52,11 +53,14 @@ always @(*) begin
         CNT1:
             state_ns = (cnt_64 == 7'd63) ? CNT2 : CNT1;
         CNT2:
+        // CNT1:
 
-        OPT:
+        // CNT2:
 
-        OUTPUT:
-            state_ns = IDLE;
+        // OPT:
+
+        // OUTPUT:
+            // state_ns = IDLE;
         default: 
             state_ns = IDLE;
     endcase
@@ -124,6 +128,13 @@ always @(posedge CLK or posedge RST) begin
     end
 end
 
+//max,sec
+always @(posedge CLK or posedge RST) begin
+    if(RST)
+        max<= 2'd0;
+    else if()
+end
+
 always @(posedge CLK or posedge RST) begin
     if(RST)
         DONE <= 1'd0;
@@ -142,6 +153,9 @@ always @(posedge CLK or posedge RST) begin
         if(cnt_64==7'd0)
 
     end
+    // else if()begin
+
+    // end
     else begin
         C1X <= 4'd0;
         C1Y <= 4'd0;
