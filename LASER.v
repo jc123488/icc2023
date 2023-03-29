@@ -431,6 +431,7 @@ assign x_mis=(circle_x > X_in[cnt_40])? circle_x - X_in[cnt_40]: X_in[cnt_40]-ci
 assign y_mis=(circle_y > Y_in[cnt_40])?circle_y - Y_in[cnt_40]: Y_in[cnt_40]-circle_y;
 
 //determine dot in the circle
+//fuck
 always @(posedge CLK or posedge RST) begin
     if(state_cs == CNT1)begin
         if(xs && ys)
