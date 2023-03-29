@@ -47,7 +47,7 @@ always @(*) begin
         IDLE:
             state_ns = INPUT; 
         INPUT:
-            state_ns = (cnt_40 == 6'd39) ? INPUT : CNT1;
+            state_ns = (cnt_40 == 6'd39) ? CNT1 : INPUT;
         // CNT1:
 
         // CNT2:
@@ -114,7 +114,7 @@ end
 
 always @(posedge CLK or posedge RST) begin
     if(RST)
-        DONE <= 1'd0;
+        DONE <= 1'd1;
     else if(state_cs == OUTPUT)
         DONE <= 1'd1;
     else 
