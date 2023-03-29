@@ -74,7 +74,7 @@ always @(*) begin
             state_ns = (cnt_40 == 6'd39) ? OPT2 : OPT1;
         OPT2:
             state_ns = (cnt_opt == 4'd10) ? OUTPUT : (cnt_40 == 6'd39) ? OPT1 : OPT2;
-         OUTPUT:
+        OUTPUT:
             state_ns = IDLE;
         default: 
             state_ns = IDLE;
@@ -417,6 +417,14 @@ always @(posedge CLK or posedge RST) begin
             endcase
         end
     end
+    else if(state_cs == OPT1)begin
+        circle_x <= max_circle1_x[cnt_opt];
+        circle_y <= max_circle1_y[cnt_opt];
+    end 
+    else if(state_cs == OPT2)begin
+        circle_x <= max_circle2_x[cnt_opt];
+        circle_y <= max_circle2_y[cnt_opt];
+    end 
 end
 
 assign 
@@ -428,5 +436,3 @@ always @(posedge CLK or posedge RST) begin
     end
 end
 endmodule
-
-
