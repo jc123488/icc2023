@@ -19,7 +19,7 @@ reg [4:0] in_cnt1, in_cnt2;
 reg [5:0] left_down_cnt, left_up_cnt, right_down_cnt, right_up_cnt;
 
 wire is_left_down, is_left_up, is_right_down, is_right_up;
-wire xb_yb,xb_ys,xs_yb,xs_ys;
+wire x_mis,y_mis;
 
 
 assign is_left_up = (X < 4'd8 && Y < 4'd8) ? 1'd1 : 1'd0;
@@ -74,7 +74,7 @@ always @(*) begin
             state_ns = (cnt_40 == 6'd39) ? OPT2 : OPT1;
         OPT2:
             state_ns = (cnt_opt == 4'd10) ? OUTPUT : (cnt_40 == 6'd39) ? OPT1 : OPT2;
-        OUTPUT:
+         OUTPUT:
             state_ns = IDLE;
         default: 
             state_ns = IDLE;
@@ -417,22 +417,17 @@ always @(posedge CLK or posedge RST) begin
             endcase
         end
     end
-    else if(state_cs == OPT1)begin
-        circle_x <= max_circle1_x[cnt_opt];
-        circle_y <= max_circle1_y[cnt_opt];
-    end 
-    else if(state_cs == OPT2)begin
-        circle_x <= max_circle2_x[cnt_opt];
-        circle_y <= max_circle2_y[cnt_opt];
-    end 
 end
 
-assign 
+assign x_mis=(circle_x > X_in[cnt_40])? circle_x - X_in[cnt_40]: X_in[cnt_40]-circle_x;
+assign y_mis=(circle_y > Y_in[cnt_40])?circle_y - Y_in[cnt_40]: Y_in[cnt_40]-circle_y;
 
 //determine dot in the circle
 always @(posedge CLK or posedge RST) begin
     if(state_cs == CNT1)begin
-        if(circle_x>)
+        if(xs && ys)
     end
 end
 endmodule
+
+
