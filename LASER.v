@@ -13,15 +13,14 @@ reg [3:0] X_in [0:39];
 reg [3:0] Y_in [0:39];
 integer i;
 
-reg [39:0] in_C1, in_C2;
-reg [4:0] in_cnt1, in_cnt2;
-
-reg [5:0] dot_in;
+reg [39:0] in_C1, in_C2,in_C1_max, in_C2_max;
+reg [4:0] in_cnt1, in_cnt2,in_cnt1_max, in_cnt2_max;
 
 reg [5:0] left_down_cnt, left_up_cnt, right_down_cnt, right_up_cnt;
 
 wire is_left_down, is_left_up, is_right_down, is_right_up;
-wire x_mis,y_mis;
+wire [3:0]x_mis,y_mis,mis_b,mis_s;
+
 
 assign is_left_up = (X < 4'd8 && Y < 4'd8) ? 1'd1 : 1'd0;
 assign is_left_down = (X < 4'd8 && Y > 4'd7) ? 1'd1 : 1'd0;
@@ -272,6 +271,36 @@ always @(posedge CLK or posedge RST) begin
     else 
         DONE <= 1'd0;
 end
+//max_circle1_x
+// always @(posedge CLK or posedge RST) begin
+//      if(RST)
+//         in_C1<=40'd0;
+//     else if(state_cs == CNT1
+// end
+
+//in_C1_max
+always @(posedge CLK or posedge RST) begin
+    if(RST)begin
+        in_C1_max<=40'd0;
+        in_cnt1_max<=5'd0;
+    end
+    else if(state_cs == CNT1 && cnt_40==6'd39 && in_cnt1_max<in_cnt1)begin
+        in_C1_max<=in_C1;
+        in_cnt1_max<=in_cnt1;
+    end
+end
+
+//in_C2_max
+always @(posedge CLK or posedge RST) begin
+    if(RST)begin
+        in_C2_max<=40'd0;
+        in_cnt2_max<=5'd0;
+    end
+    else if(state_cs == CNT2 && cnt_40==6'd39 && in_cnt2_max<in_cnt2)begin
+        in_C2_max<=in_C2;
+        in_cnt2_max<=in_cnt2;
+    end
+end
 
 always @(posedge CLK or posedge RST) begin
     if(RST)begin
@@ -281,15 +310,18 @@ always @(posedge CLK or posedge RST) begin
         C2Y <= 4'd0;
     end
     else if(state_cs == CNT1)begin
-        C1X <= circle_x;
-        C1Y <= circle_y;
+        if(cnt_40==6'd39 && in_cnt1_max<in_cnt1)begin
+            C1X <= circle_x;
+            C1Y <= circle_y;
+        end
     end
     else if(state_cs == CNT2)begin
-        C2X <= circle_x;
-        C2Y <= circle_y;
+        if(cnt_40==6'd39 && in_cnt2_max<in_cnt2)begin
+            C2X <= circle_x;
+            C2Y <= circle_y;
+        end
     end
     else if(state_cs == OPT1)begin
-
         C1X <= circle_x;
         C1Y <= circle_y;
     end
@@ -297,7 +329,7 @@ always @(posedge CLK or posedge RST) begin
         C2X <= circle_x;
         C2Y <= circle_y;
     end
-    else if(state_cs == IDLE)begin
+    else begin
         C1X <= 4'd0;
         C1Y <= 4'd0;
         C2X <= 4'd0;
@@ -437,21 +469,58 @@ always @(posedge CLK or posedge RST) begin
 end
 
 assign x_mis=(circle_x > X_in[cnt_40])? circle_x - X_in[cnt_40]: X_in[cnt_40]-circle_x;
-assign y_mis=(circle_y > Y_in[cnt_40])?circle_y - Y_in[cnt_40]: Y_in[cnt_40]-circle_y;
+assign y_mis=(circle_y > Y_in[cnt_40])? circle_y - Y_in[cnt_40]: Y_in[cnt_40]-circle_y;
+assign mis_b=(x_mis>y_mis)?x_mis:y_mis;
+assign mis_s=(x_mis<y_mis)?y_mis:x_mis;
 
 //determine dot in the circle
-//fuck
 always @(posedge CLK or posedge RST) begin
     if(state_cs == CNT1)begin
-        if(xs && ys)
+        if(mis_b==4 && mis_s==0)begin
+            in_C1[cnt_40]<=1;
+            in_cnt1<=in_cnt1+1;
+        end
+        else if(mis_b==3 && mis_s<3)begin
+            in_C1[cnt_40]<=1;
+            in_cnt1<=in_cnt1+1;
+        end
+        else if(mis_b==2 && mis_s<4)begin
+            in_C1[cnt_40]<=1;
+            in_cnt1<=in_cnt1+1;
+        end
+        else if(mis_b==1 && mis_s<4)begin
+            in_C1[cnt_40]<=1;
+            in_cnt1<=in_cnt1+1;
+        end
     end
 end
 
 always @(posedge CLK or posedge RST) begin
-    if(RST)
-        dot_in <= 6'd0;
-    else if 
+    if(state_cs == CNT2 && ~in_C1[cnt_40])begin
+        if(mis_b==4 && mis_s==0)begin
+            in_C2[cnt_40]<=1;
+            in_cnt2<=in_cnt2+1;
+        end
+        else if(mis_b==3 && mis_s<3)begin
+            in_C2[cnt_40]<=1;
+            in_cnt2<=in_cnt2+1;
+        end
+        else if(mis_b==2 && mis_s<4)begin
+            in_C2[cnt_40]<=1;
+            in_cnt2<=in_cnt2+1;
+        end
+        else if(mis_b==1 && mis_s<4)begin
+            in_C2[cnt_40]<=1;
+            in_cnt2<=in_cnt2+1;
+        end
+    end
 end
+
+// always @(posedge CLK or posedge RST) begin
+//     if(RST)
+//         dot_in <= 6'd0;
+//     else if 
+// end
 
 endmodule
 
