@@ -118,11 +118,12 @@ end
 always @(posedge CLK or posedge RST) begin
     if(RST)
         cnt_6 <= 3'd0;
-    else if(state_cs == CNT2)
+    else if(state_cs == CNT2)begin
         if(cnt_6==3'd5 && cnt_40 == 6'd39)
             cnt_6<=6'd0;
         else if(cnt_40 == 6'd39)
             cnt_6 <= cnt_6 + 3'd1;
+    end
     else 
         cnt_6 <= 3'd0;
 end
@@ -475,7 +476,7 @@ end
 assign x_mis=(circle_x > X_in[cnt_40])? circle_x - X_in[cnt_40]: X_in[cnt_40]-circle_x;
 assign y_mis=(circle_y > Y_in[cnt_40])? circle_y - Y_in[cnt_40]: Y_in[cnt_40]-circle_y;
 assign mis_b=(x_mis>y_mis)?x_mis:y_mis;
-assign mis_s=(x_mis<y_mis)?y_mis:x_mis;
+assign mis_s=(x_mis>y_mis)?y_mis:x_mis;
 
 //determine dot in the circle
 always @(posedge CLK or posedge RST) begin
@@ -529,14 +530,14 @@ always @(posedge CLK or posedge RST) begin
             in_C2[cnt_40]<=1;
             in_cnt2<=in_cnt2+1;
         end
-        else if(mis_b==2 && mis_s<4)begin
+        else if(mis_b<3 )begin
             in_C2[cnt_40]<=1;
             in_cnt2<=in_cnt2+1;
-        end
-        else if(mis_b==1 && mis_s<4)begin
-            in_C2[cnt_40]<=1;
-            in_cnt2<=in_cnt2+1;
-        end
+         end
+        // else if(mis_b==1 && mis_s<4)begin
+        //     in_C2[cnt_40]<=1;
+        //     in_cnt2<=in_cnt2+1;
+        // end
     end
 end
 
