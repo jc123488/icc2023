@@ -18,7 +18,7 @@ reg [4:0] in_cnt1, in_cnt2,in_cnt1_max, in_cnt2_max;
 
 reg [5:0] left_down_cnt, left_up_cnt, right_down_cnt, right_up_cnt;
 
-wire is_left_down, is_left_up, is_right_down, is_right_up;
+wire is_left_down, is_left_up, is_right_down, is_right_up,already_in_C1;
 wire [3:0]x_mis,y_mis,mis_b,mis_s;
 
 
@@ -40,7 +40,7 @@ parameter IDLE = 3'd0,
 reg [5:0] cnt_40;
 reg [6:0] cnt_64;
 reg [2:0] max,sec,cnt_7,cnt_6;
-reg [5:0] max_v;
+reg [5:0] max_v,sec_v;
 
 reg [3:0] circle_x, circle_y;
 
@@ -50,6 +50,7 @@ reg [3:0] max_circle2_x[0:9];
 reg [3:0] max_circle2_y[0:9];
 reg [3:0] cnt_max, cnt_opt;
 reg cd_line;
+assign already_in_C1=in_C1_max[cnt_40];//cnt_40
 
 always @(posedge CLK or posedge RST) begin
     if(RST)
@@ -237,10 +238,14 @@ always @(posedge CLK or posedge RST) begin
             3'd1: begin
                 if(left_down_cnt>max_v) 
                     sec<= max;
+                else if(left_down_cnt>sec_v)
+                    sec<= 2'd2;
             end
             3'd2: begin
                 if(right_down_cnt>max_v)
                     sec<= max;
+                else if(right_down_cnt>sec_v)
+                    sec<= 2'd3;
         end
         endcase
     end
@@ -255,6 +260,8 @@ always @(posedge CLK or posedge RST) begin
             3'd0: begin
                 if (right_up_cnt>left_up_cnt) 
                     max_v<= right_up_cnt;
+                else
+                     max_v<= left_up_cnt;
             end
             3'd1: begin
                 if(left_down_cnt>max_v)
@@ -262,6 +269,33 @@ always @(posedge CLK or posedge RST) begin
             end
             3'd2: begin
                 if(right_down_cnt>max_v)
+                    max_v<= right_down_cnt;
+            end
+        endcase
+    end
+end
+
+always @(posedge CLK or posedge RST) begin
+    if(RST)
+        sec_v<= 6'd0;
+    else if(state_cs == COMP)begin
+        case (cnt_7)
+            3'd0: begin
+                if (right_up_cnt<left_up_cnt) 
+                    sec_v<= right_up_cnt;
+                else
+                    sec_v<= left_up_cnt;
+            end
+            3'd1: begin
+                if(left_down_cnt>max_v)
+                    sec_v<= max_v;
+                else if(left_down_cnt>sec_v)
+                    sec_v<=left_down_cnt;
+            end
+            3'd2: begin
+                if(right_down_cnt>max_v)
+                    sec_v<= max_v;
+                else if(right_down_cnt>sec_v)  
                     max_v<= right_down_cnt;
             end
         endcase
@@ -517,7 +551,7 @@ always @(posedge CLK or posedge RST) begin
         in_cnt2 <= 5'd0;
         in_C2<=40'd0;
         end
-    else if(state_cs == CNT2 && ~in_C1[cnt_40])begin
+    else if(state_cs == CNT2 && ~in_C1_max[cnt_40])begin
         if(cnt_40==6'd39)begin
         in_cnt2 <= 5'd0;
         in_C2<=40'd0;
