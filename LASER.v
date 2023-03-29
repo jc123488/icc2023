@@ -25,7 +25,7 @@ assign is_left_down = (X < 4'd8 && Y > 4'd7) ? 1'd1 : 1'd0;
 assign is_right_up = (X > 4'd7 && Y < 4'd8) ? 1'd1 : 1'd0;
 assign is_right_down = (X > 4'd7 && Y > 4'd7) ? 1'd1 : 1'd0;
 
-          reg [2:0] state_cs, state_ns;;
+reg [2:0] state_cs, state_ns;
 parameter IDLE = 3'd0, 
           INPUT = 3'd1,
           CNT1 = 3'd2,
